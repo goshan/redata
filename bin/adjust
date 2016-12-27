@@ -1,0 +1,17 @@
+#!/usr/bin/env ruby
+
+require File.expand_path '../../lib/redata', __FILE__
+
+
+query_file = Redata::RED.root.join 'database', 'adjust', "#{Redata::RED.params[1]}.sql"
+tmp_script_file = Redata::RED.root.join 'tmp', 'queries', "adj_#{Redata::RED.params[0]}_#{Redata::RED.params[1]}.sql"
+
+Redata::Log.action "QUERY: Run query file [#{query_file.relative_path_from Redata::RED.root}] in #{Redata::RED.params[0]}"
+Redata::Parser.gen_adjust_file query_file, tmp_script_file
+
+if Redata::RED.params[0] == "redshift"
+	Redata::DATABASE.connect_with_file tmp_script_file
+else
+	Redata::DATABASE.connect_mysql_with_file tmp_script_file, Redata::RED.params[0], Redata::RED.params[2]
+end
+

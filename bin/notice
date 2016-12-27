@@ -1,0 +1,20 @@
+#!/usr/bin/env ruby
+
+require 'slack'
+require File.expand_path '../../lib/redata', __FILE__
+require File.expand_path '../../lib/redata/notice', __FILE__
+
+
+
+if ['update'].include? Redata::RED.params[0]
+	notice = Redata::Notice.new
+	case Redata::RED.params[0]
+	when 'update'
+		if Redata::RED.production?
+			notice.send "今日の自動更新を完了しました！\n今のデータ期間は `2015-07-29 ~ #{Redata::RED.date_days_ago 3}` になってます"
+		else
+			Redata::Log.warning "WARNING: Could send notice only in production env"
+		end
+	end
+end
+
