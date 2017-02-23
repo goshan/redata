@@ -22,7 +22,8 @@ module Redata
 			# config file
 			@config = YAML.load(ERB.new(File.read(@root.join 'config', 'redata.yml')).result(binding))
 			@s3_config = @config['s3']
-			@s3_config['bucket'] = @s3_config['bucket'][@env]
+			@s3_config['bucket'] += "-dev" unless @env == 'production'
+			@s3_config['region'] = 'ap-northeast-1'
 			@s3_config['host'] = "https://s3-#{@s3_config['region']}.amazonaws.com/#{@s3_config['bucket']}"
 			Aws.config.update({
 				region: @s3_config['region'],
@@ -30,6 +31,7 @@ module Redata
 			})
 			@tz_local = Timezone[@config['timezone']]
 			@slack_token = @config['slack_bot']
+			@keep_tmp = @config['keep_tmp']
 		end
 
 		def development?
@@ -40,8 +42,26 @@ module Redata
 			@env == 'production'
 		end
 
-		def default_start_date
-			@config['start_date']
+		def keep_tmp?
+			@keep_tmp
+		end
+
+		def start_time
+			return @locals[:start_time] if @locals[:start_time]
+			if @is_append
+				@tz_local.utc_to_local(Time.now.utc-@config['append_interval']['start_time']*24*3600).strftime('%Y-%m-%d')
+			else
+				@config['create_interval']['start_time']
+			end
+		end
+
+		def end_time
+			return @locals[:end_time] if @locals[:end_time]
+			if @is_append
+				@tz_local.utc_to_local(Time.now.utc-@config['append_interval']['end_time']*24*3600).strftime('%Y-%m-%d')
+			else
+				@tz_local.utc_to_local(Time.now.utc-@config['create_interval']['end_time']*24*3600).strftime('%Y-%m-%d')
+			end
 		end
 
 		def ssh
@@ -60,11 +80,6 @@ module Redata
 			@tz_local.utc_to_local(Time.now.utc).strftime('%Y-%m-%d %H:%M:%S')
 		end
 
-		def default_append_date
-			# 2 days ago bacause there is only data 2 days ago in redshift
-			@tz_local.utc_to_local(Time.now.utc-2*24*3600).strftime('%Y-%m-%d')
-		end
-
 		def date_days_ago(days)
 			@tz_local.utc_to_local(Time.now.utc-days*24*3600).strftime('%Y-%m-%d')
 		end
@@ -76,9 +91,6 @@ module Redata
 			i = 0
 			while i < argv.count
 				case argv[i]
-				when '-dir'
-					i += 1
-					new_argv[:dir] = argv[i]
 				when '-e'
 					i += 1
 					new_argv[:env] = argv[i]
@@ -86,11 +98,11 @@ module Redata
 					new_argv[:force] = true
 				when '-ssh'
 					new_argv[:ssh] = true
-				when '-append_mode'
+				when '-append'
 					new_argv[:append_mode] = true
 				else
-					if argv[i] =~ /-(.+)/
-						key = argv[i].match(/-(.+)/)[1]
+					if argv[i] =~ /\A-(.+)/
+						key = argv[i].match(/\A-(.+)/)[1]
 						i += 1
 						new_argv[:locals][key.to_sym] = argv[i]
 					else

@@ -9,59 +9,44 @@ module Redata
 			@ssh = Ssh.new
 		end
 
-		def connect_with_file(file)
+		def connect_redshift(config)
 			cmd = make_redshift_cmd
 			if @ssh.run_with_ssh?
-				@ssh.upload_file file
-				@ssh.run_command "export PGPASSWORD='#{ENV['PGPASSWORD']}';#{cmd} -f ~/tmp/#{file.basename}"
+				@ssh.upload_dir config.tmp_file_dir
+				@ssh.run_command "export PGPASSWORD='#{ENV['PGPASSWORD']}';#{cmd} -f ~/tmp/#{config.tmp_file_dir.basename}/exec.sql"
+				@ssh.remove_dir "~/tmp/#{config.tmp_file_dir.basename}"
 			else
-				system "#{cmd} -f #{file}"
+				system "#{cmd} -f #{config.tmp_exec_file}"
 			end
 		end
 
-		def connect_with_query(query)
-			cmd = make_redshift_cmd
-			if @ssh.run_with_ssh?
-				@ssh.run_command "export PGPASSWORD='#{ENV['PGPASSWORD']}';#{cmd} -c '#{query}'"
+		def inject_data(config, stage)
+			target_config = @config['deploy'][config.category.to_s]
+			Log.error! "ERROR: Export config of #{config.category} was not found" unless target_config
+
+			target_config = target_config[stage] if stage
+			Log.error! "ERROR: Export config of #{config.category} for stage #{stage} was not found" unless target_config
+
+			if target_config['local_dir']
+				cmd = "mv #{config.tmp_data_file} #{target_config['local_dir']}/#{config.source_name}.tsv"
+			elsif target_config['database']
+				import_params = "--local #{RED.is_append ? '' : '--delete'} --fields-terminated-by='\\t' --fields-enclosed-by='\\\"' --lines-terminated-by='\\n'"
+				cmd = "mysqlimport #{make_mysql_cmd_params(target_config)} #{config.tmp_data_file} #{import_params}"
 			else
-				system "#{cmd} -c '#{query}'"
+				Log.error! "ERROR: Export config of #{config.category} was not found" unless target_config
 			end
+			system cmd
 		end
 
-		def inject_to_mysql(config, platform)
-			if @ssh.run_with_ssh?
-				@ssh.upload_file config.tmp_data_file, config.name
-				data_file = "~/tmp/#{config.name}"
-			else
-				data_file = config.tmp_data_file
-			end
+		def connect_mysql(query_file, category, stage)
+			target_config = @config['deploy'][category.to_s]
+			Log.error! "ERROR: Export config of #{config.category} was not found" unless target_config
 
-			is_append = RED.is_append && config.update_type == :append
-			cmd = "mysqlimport #{make_mysql_cmd_config(config.category.to_s, platform)} #{data_file} --local #{is_append ? '' : '--delete'} --fields-terminated-by='\\t' --fields-enclosed-by='\\\"' --lines-terminated-by='\\n'"
+			target_config = target_config[stage] if stage
+			Log.error! "ERROR: Export config of #{config.category} for stage #{stage} was not found" unless target_config
 
-			if @ssh.run_with_ssh?
-				@ssh.run_command cmd
-			else
-				system "#{cmd}"
-			end
-
-		end
-
-		def connect_mysql_with_file(query_file, category, platform)
-			if @ssh.run_with_ssh?
-				@ssh.upload_file query_file, query_file.basename
-				data_file = "~/tmp/#{query_file.basename}"
-			else
-				data_file = query_file
-			end
-
-			cmd = "mysql #{make_mysql_cmd_config(category, platform)} < #{data_file}"
-
-			if @ssh.run_with_ssh?
-				@ssh.run_command cmd
-			else
-				system cmd
-			end
+			cmd = "mysql #{make_mysql_cmd_params(target_config)} < #{query_file}"
+			system cmd
 		end
 
 		private
@@ -70,18 +55,8 @@ module Redata
 			return "psql -h #{@config['host']} -p #{REDSHIFT_PORT} -U #{@config['username']} -d #{@config['database']}"
 		end
 
-		def make_mysql_cmd_config(category, platform)
-			export_db_config = @config['export'][category]
-			Log.error! "ERROR: Export config of #{category} was not found in config/database.yml" unless export_db_config
-			if platform
-				if export_db_config[platform]
-					export_db_config = export_db_config[platform]
-				else
-					Log.warning "WARNING: Platform #{platform} was not declared in config/database.yml, ignore platform setting"
-				end
-			end
-
-			return "-h#{export_db_config['host']} -u#{export_db_config['username']} #{export_db_config['password'].empty? ? '' : '-p'+export_db_config['password']} #{export_db_config['database']}"
+		def make_mysql_cmd_params(db_config)
+			return "-h#{db_config['host']} -u#{db_config['username']} #{db_config['password'].empty? ? '' : '-p'+db_config['password']} #{db_config['database']}"
 		end
 
 	end

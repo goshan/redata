@@ -17,12 +17,16 @@ module Redata
 			return false
 		end
 
-		def upload_file(file, target_file=nil)
-			system "scp -i #{@ssh['IdentityFile']} #{file} #{@ssh['User']}@#{@ssh['HostName']}:~/tmp/#{target_file}"
+		def upload_dir(dir)
+			system "scp -r -i #{@ssh['IdentityFile']} #{dir} #{@ssh['User']}@#{@ssh['HostName']}:~/tmp/"
 		end
 
 		def run_command(cmd)
 			system "ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"#{cmd}\""
+		end
+
+		def remove_dir(dir)
+			system "ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"rm -rf #{dir}\""
 		end
 	end
 end

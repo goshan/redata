@@ -5,7 +5,7 @@ require File.expand_path '../../lib/redata', __FILE__
 require Redata::RED.root.join('config', 'relations.rb').to_s
 
 
-if ['create', 'delete', 'checkout', 'inject'].include? Redata::RED.params[0]
+if ['create', 'delete', 'checkout', 'deploy'].include? Redata::RED.params[0]
 	case Redata::RED.params[0]
 	when 'create'
 		Redata::Task.create_datasource Redata::RED.params[1]
@@ -13,8 +13,8 @@ if ['create', 'delete', 'checkout', 'inject'].include? Redata::RED.params[0]
 		Redata::Task.delete_datasource Redata::RED.params[1]
 	when 'checkout'
 		Redata::Task.checkout_datasource Redata::RED.params[1]
-	when 'inject'
-		Redata::Task.inject Redata::RED.params[1], Redata::RED.params[2]
+	when 'deploy'
+		Redata::Task.deploy_datasource Redata::RED.params[1], Redata::RED.params[2]
 	end
 end
 

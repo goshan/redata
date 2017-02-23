@@ -1,146 +1,177 @@
 module Redata
 	class Parser
-		INCLUDE_REGEX = /#include (.*)-->(.*)/
-		REF_REGEX = /{([^{}]+)}/
-		REF_SPLIT_REGEX = /\s*{[^{}]+}\s*/
+		COMMENT_REGEX = /-{2}.*/
+		LOAD_REGEX = /#load (.*)->(.*)/
+		IF_REGEX = /\[\s*if ([^\s]*) is ([^\]]*)\]/
+		IFNUL_REGEX = /\[\s*if ([^\s]*) is null\s*\]/
+		ENDIF_REGEX = /\[\s*endif\s*\]/
 		START_TIME_REGEX = /\[start_time\]/
+		END_TIME_REGEX = /\[end_time\]/
 		TIME_OFFSET_REGEX = /\[(\d+) days ago\]/
 		CURRENT_TIME_REGEX = /\[current_time\]/
-		LOCALS_REGEX = /\[([^\[\]]+)\]/
+		LOCALS_REGEX = /\[([^\[\]<>\s]+)\]/
+		LOCALS_LIST_REGEX = /\[<([^\[\]<>\s]+)>\]/
 
-		CONV_TABLE_REGEX = /source:(.*)/
-		CONV_COLUMN_REGEX = /columns:\s*/
-		CONV_SWITCHDEF_REGEX = /(.+){(.*)}/
-		CONV_SWITCH_REGEX = /([^,]+)=>([^,]+)/
-		CONV_TIMESTAMP_REGEX = /\[time_stamp\]/
-
-		def self.gen_redshift_query(config, start_time=nil)
-			Log.error! "ERROR: Query file '#{config.query_file.relative_path_from RED.root}' not exists" unless config.query_file.exist?
-
-			File.open config.tmp_script_file, 'w' do |f|
-				if start_time && config.type == :table
-					f.puts "INSERT INTO #{config.source_name} ("
-				else
-					start_time = RED.default_start_date
-					f.puts "CREATE #{config.type} #{config.source_name} AS ("
-				end
-				self.parse_redshift_file config.query_file, f, start_time
-				f.puts ");"
+		def self.gen_create_query(config)
+			if config.type == :table
+				self.gen_table_query config
+			elsif config.type == :view
+				self.gen_view_query config
 			end
 		end
 
-		def self.gen_export_query(config, start_time=nil)
-			Log.error! "ERROR: Convertor config '#{config.conv_file.relative_path_from RED.root}' not exists" unless config.conv_file.exist?
+		def self.gen_delete_query(config)
+			File.open config.tmp_exec_file, 'w' do |f|
+				f.puts "DROP #{config.type} #{config.source_name} #{RED.is_forced ? 'CASCADE' : 'RESTRICT'};"
+			end
+		end
 
-			File.open config.tmp_script_file, 'w' do |f|
+		def self.gen_checkout_query(config)
+			Log.error! "ERROR: Only could checkout data from view" unless config.type == :view
+
+			File.open config.tmp_exec_file, 'w' do |f|
 				f.puts "UNLOAD ('"
-				f.puts self.parse_convertor_file config.conv_file
-				f.puts "where date >= \\'#{start_time}\\'" if start_time
+				f.puts "SELECT * FROM #{config.source_name}"
 				f.puts "') to 's3://#{RED.s3['bucket']}/#{config.bucket_file}'"
 				f.puts "CREDENTIALS 'aws_access_key_id=#{RED.s3['aws_access_key_id']};aws_secret_access_key=#{RED.s3['aws_secret_access_key']}'"
 				f.puts "ESCAPE ALLOWOVERWRITE PARALLEL OFF DELIMITER AS '\\t';"
 			end
 		end
 
-		def self.gen_adjust_file(query_file, tmp_script_file)
-			Log.error! "ERROR: Query file '#{query_file.relative_path_from RED.root}' not exists" unless query_file.exist?
-
-			File.open tmp_script_file, 'w' do |f|
-				self.parse_redshift_file query_file, f, RED.default_start_date
-			end
+		def self.gen_adjust_query(config)
+			self.parse config.query_file, config.tmp_exec_file, ''
 		end
 
 
 		private
-		def self.parse_redshift_file(in_file, out, start_time)
-			links = {}
-			File.open(in_file).each.with_index do |line, index|
-				if line =~ INCLUDE_REGEX
-					# parse include syntax
-					res = line.scan(INCLUDE_REGEX).first
-					sub = res[0].gsub /[\s|\'|\"]+/, ''
-					link = res[1].gsub /[\s|:]+/, ''
-					Log.error! "QUERY ERROR: #{in_file.relative_path_from RED.root}:#{index+1}: include query is missing file or alias" if sub.empty? || link.empty?
-					
-					sub_file = in_file.parent.join "_#{sub}.sql"
-					sub_file = RED.root.join 'database', 'shared', "_#{sub}.sql" unless sub_file.exist?
-					Log.error! "QUERY ERROR: #{in_file.relative_path_from RED.root}:#{index+1}: included file _#{sub}.sql could not be found in ./ or {root}/database/shared/" unless sub_file.exist?
+		def self.gen_table_query(config)
+			Log.error! "ERROR: Relation error" unless config.type == :table
 
-					Log.error! "QUERY ERROR: #{in_file.relative_path_from RED.root}:#{index+1}: alias #{link} was declared multiple times" if links[link]
+			tmp_file = config.tmp_file_dir.join "#{config.source_name}.resql"
+			temp_tables = self.parse config.query_file, tmp_file
 
-					links[link] = sub_file
-				elsif line =~ REF_REGEX
-					# parse {ref} syntax
-					res = line.scan REF_REGEX
-					refs = res.map{|r| r.first.gsub /\s+/, ''}
-					origins = line.split REF_SPLIT_REGEX
+			File.open config.tmp_exec_file, 'w' do |f|
+				# print temp tables
+				temp_tables.each do |name|
+					f.puts "CREATE TEMP TABLE #{name} AS ("
+					f.puts File.read(config.tmp_file_dir.join "#{name}.resql")
+					f.puts ");"
+				end
 
-					out.puts origins[0].gsub(';', '')
-					refs.each_with_index do |ref, i|
-						Log.error! "QUERY ERROR: #{in_file}:#{index+1}:\nsub query #{ref} not found." unless links[ref]
-						out.puts "("
-						self.parse_redshift_file links[ref], out, start_time
-						out.puts ") as #{ref}"
-						out.puts origins[i+1].gsub(';', '') if origins[i+1]
+				# print create or insert query
+				if RED.is_append
+					f.puts "INSERT INTO #{config.source_name} ("
+				elsif
+					f.puts "CREATE #{config.type} #{config.source_name} AS ("
+				end
+				f.puts File.read tmp_file
+				f.puts ");"
+			end
+		end
+
+		def self.gen_view_query(config)
+			Log.error! "ERROR: Relation error" unless config.type == :view
+
+			tmp_file = config.tmp_file_dir.join "#{config.source_name}.resql"
+			temp_tables = self.parse config.query_file, tmp_file
+
+			File.open config.tmp_exec_file, 'w' do |f|
+				f.puts "CREATE #{config.type} #{config.source_name} AS ("
+				temp_tables.each_with_index do |name, index|
+					f.puts "#{index == 0 ? 'WITH' : ','} #{name} AS ("
+					f.puts File.read(config.tmp_file_dir.join "#{name}.resql")
+					f.puts ")"
+				end
+
+				# print create query
+				main = File.read tmp_file
+				unless temp_tables.empty?
+					main.gsub! 'WITH', ','
+					main.gsub! 'with', ','
+				end
+				f.puts main
+				f.puts ");"
+			end
+		end
+
+		def self.parse(in_file, out_file, skip_char=';')
+			Log.error! "ERROR: Query file '#{in_file.relative_path_from RED.root}' not exists" unless in_file.exist?
+
+			temp_tables = []
+			parse_enable = true
+			File.open out_file, 'w' do |out|
+				File.open(in_file).each do |line|
+					# remove comments
+					line.gsub!(COMMENT_REGEX, '')
+					# remove skip_char
+					line.gsub!(skip_char, '')
+					# remove empty line
+					next if !line || line.empty? || line =~ /^\s*$/
+
+					# check if else condition
+					if line =~ IFNUL_REGEX
+						res = line.scan(IFNUL_REGEX).first
+						var = res[0]
+						parse_enable = RED.locals[var.to_sym].nil?
+						next
+					elsif line =~ IF_REGEX
+						res = line.scan(IF_REGEX).first
+						var = res[0]
+						val = res[1].gsub /[\s|\'|\"]+/, ''
+						parse_enable = (RED.locals[var.to_sym] == val)
+						next
+					elsif line =~ ENDIF_REGEX
+						parse_enable = true
+						next
 					end
-				elsif line =~ START_TIME_REGEX
+					next unless parse_enable
+
+					# compile sub file
+					if line =~ LOAD_REGEX
+						# parse load syntax
+						res = line.scan(LOAD_REGEX).first
+						sub = res[0].gsub /[\s|\'|\"]+/, ''
+						name = res[1].gsub /[\s|:]+/, ''
+						Log.error! "QUERY ERROR: syntax error for load query: #{line}" if sub.empty? || name.empty?
+						
+						sub_file = in_file.parent.join "_#{sub}.red.sql"
+						sub_file = RED.root.join 'database', 'shared', "_#{sub}.rea.sql" unless sub_file.exist?
+						sub_temp_tables = self.parse sub_file, out_file.dirname.join("#{name}.resql")
+						sub_temp_tables.each do |n|
+							temp_tables.push n unless temp_tables.include? n
+						end
+						temp_tables.push name unless temp_tables.include? name
+						next  # load query line can not contain other content
+					end
+
 					# parse [start_time] syntax
-					out.puts line.gsub(START_TIME_REGEX, "'#{start_time}'").gsub(';', '')
-				elsif line =~ TIME_OFFSET_REGEX
+					line.gsub! START_TIME_REGEX, "'#{RED.start_time}'" 
+					# parse [end_time] syntax
+					line.gsub! END_TIME_REGEX, "'#{RED.end_time}'"
+					# parse [current_time] syntax
+					line.gsub! CURRENT_TIME_REGEX, "'#{RED.current_time}'"
+
 					# parse [3 days ago]
 					res = line.scan(TIME_OFFSET_REGEX).each do |res|
-						line = line.gsub "[#{res[0]} days ago]", "#{RED.date_days_ago(res[0].to_i)}"
+						line.gsub! "[#{res[0]} days ago]", "'#{RED.date_days_ago(res[0].to_i)}'"
 					end
-					out.puts line
-				elsif line =~ CURRENT_TIME_REGEX
-					line = line.gsub "[current_time]", "#{RED.current_time}"
-					out.puts line
-				elsif line =~ LOCALS_REGEX
 					# parse [locals] syntax
 					line.scan(LOCALS_REGEX).each do |res|
 						key = res.first
 						Log.error! "QUERY ERROR: Local params #{key} was missing." unless RED.locals[key.to_sym]
-						line = line.gsub "[#{key}]", "'#{RED.locals[key.to_sym]}'"
+						line.gsub! "[#{key}]", "'#{RED.locals[key.to_sym]}'"
 					end
-					out.puts line.gsub ';', ''
-				else
-					# other, print absolutely
-					out.puts line.gsub ';', ''
-				end
-			end
-		end
+					# parse [<local_list>] syntax
+					line.scan(LOCALS_LIST_REGEX).each do |res|
+						key = res.first
+						Log.error! "QUERY ERROR: Local params #{key} was missing." unless RED.locals[key.to_sym]
+						line = line.gsub "[<#{key}>]", "(#{RED.locals[key.to_sym].split(',').map{|e| "'#{e}'"}.join(',')})"
+					end
 
-		def self.parse_convertor_file(in_file)
-			is_parsing_column = false
-			columns = []
-			source = ""
-			File.open(in_file).each.with_index do |line, index|
-				if line =~ CONV_TABLE_REGEX
-					# parse table declare
-					res = line.scan(CONV_TABLE_REGEX).first
-					source = res[0].gsub /\s+/, ''
-					is_parsing_column = false
-				elsif line =~ CONV_COLUMN_REGEX
-					is_parsing_column = true
-				elsif is_parsing_column
-					line.gsub! /\s+/, ''
-					if line =~ CONV_SWITCHDEF_REGEX
-						res = line.scan(CONV_SWITCHDEF_REGEX).first
-						res[1].gsub!("'", "\\\\'")
-						switches = res[1].scan CONV_SWITCH_REGEX
-						switches.map! do |m|
-							"when #{m[0]} then #{m[1]}"
-						end
-						columns.push "case #{res[0]} #{switches.join ' '} end as #{res[0]}"
-					elsif line =~ CONV_TIMESTAMP_REGEX
-						columns.push "\\'#{(Time.now+9*3600).strftime("%Y-%m-%d %H:%M:%S")}\\'"
-						columns.push "\\'#{(Time.now+9*3600).strftime("%Y-%m-%d %H:%M:%S")}\\'"
-					else
-						columns.push line.gsub("'", "\\\\'").gsub('NULL', "\\\\'NULL\\\\'") unless line.empty?
-					end
+					out.puts line.gsub skip_char, ''
 				end
 			end
-			"select #{columns.join ','} from #{source}"
+			temp_tables
 		end
 
 	end
