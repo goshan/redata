@@ -1,7 +1,8 @@
 module Redata
 	class Parser
 		COMMENT_REGEX = /-{2}.*/
-		LOAD_REGEX = /#load (.*)->(.*)/
+		LOAD_REGEX = /#load (.*)->([^,]*),?/
+		LOAD_PARAMS_REGEX = /,([^,>]*)>([^,>]*)/
 		IF_REGEX = /\[\s*if ([^\s]*) is ([^\]]*)\]/
 		IFNUL_REGEX = /\[\s*if ([^\s]*) is null\s*\]/
 		ENDIF_REGEX = /\[\s*endif\s*\]/
@@ -134,6 +135,13 @@ module Redata
 						name = res[1].gsub /[\s|:]+/, ''
 						Log.error! "QUERY ERROR: syntax error for load query: #{line}" if sub.empty? || name.empty?
 						
+						local_params = {}
+						line.scan(LOAD_PARAMS_REGEX).each do |res|
+							key = res[0].gsub(/\s/, '').to_sym
+							val = res[1].gsub /\s/, ''
+							local_params[key] = RED.locals[key]
+							RED.locals[key] = val
+						end
 						sub_file = in_file.parent.join "_#{sub}.red.sql"
 						sub_file = RED.root.join 'red_query', 'shared', "_#{sub}.rea.sql" unless sub_file.exist?
 						sub_temp_tables = self.parse sub_file, out_file.dirname.join("#{name}.resql")
@@ -141,7 +149,11 @@ module Redata
 							temp_tables.push n unless temp_tables.include? n
 						end
 						temp_tables.push name unless temp_tables.include? name
-						next  # load query line can not contain other content
+						local_params.each do |key, val|
+							RED.locals[key] = val
+						end
+						local_params = {}
+						next  # load query line, can not contain other content
 					end
 
 					# parse [start_time] syntax
