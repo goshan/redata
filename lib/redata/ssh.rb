@@ -22,17 +22,15 @@ module Redata
 		end
 
 		def run_command(cmd)
-			out, err, status = Open3.capture3 "ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"#{cmd}\""
+			out, err, status = Open3.capture3 "ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"#{cmd}\" >> #{RED.log_file}"
 			puts err unless err.empty?
-			Log.file out unless out.empty?
-			Log.file err unless err.empty?
+			Log.err_file err unless err.empty?
 		end
 
 		def local_command(cmd)
-			out, err, status = Open3.capture3 cmd
+			out, err, status = Open3.capture3 "#{cmd} >> #{RED.log_file}"
 			puts err unless err.empty?
-			Log.file out unless out.empty?
-			Log.file err unless err.empty?
+			Log.err_file err unless err.empty?
 		end
 
 		def remove_dir(dir)

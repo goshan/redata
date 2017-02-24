@@ -21,6 +21,12 @@ module Redata
 			self.file msg
 		end
 
+		def self.err_file(msg)
+			File.open RED.log_file, 'a' do |f|
+				f.puts msg
+			end
+		end
+
 		def self.file(msg)
 			File.open RED.log_file, 'a' do |f|
 				f.puts "[#{RED.current_time}] #{msg}"
