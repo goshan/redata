@@ -135,7 +135,7 @@ module Redata
 						Log.error! "QUERY ERROR: syntax error for load query: #{line}" if sub.empty? || name.empty?
 						
 						sub_file = in_file.parent.join "_#{sub}.red.sql"
-						sub_file = RED.root.join 'database', 'shared', "_#{sub}.rea.sql" unless sub_file.exist?
+						sub_file = RED.root.join 'red_query', 'shared', "_#{sub}.rea.sql" unless sub_file.exist?
 						sub_temp_tables = self.parse sub_file, out_file.dirname.join("#{name}.resql")
 						sub_temp_tables.each do |n|
 							temp_tables.push n unless temp_tables.include? n

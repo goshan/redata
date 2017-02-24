@@ -47,7 +47,7 @@ slack_bot:  # this setting will be used for slack notice push
   channel: slack_channel
 ```
 
-+ config `config/database.yml` for development and production environment in redshift database  
++ config `config/red_access.yml` for development and production environment in redshift database  
 eg.
 
 ```YAML
@@ -75,14 +75,14 @@ Redata::Task.schema.config do
   # Example of declaring a global table
   table 'table_name'
   # This declaration means
-  #   query file: database/sources/table_name.red.sql
+  #   query file: red_query/sources/table_name.red.sql
   #   redshift table: table_name
   #   key used in command line: table_name
 
   # Example of declaring a global table with customizing options
   table 'new_table_name', :dir => 'dir', :file => 'query_file', :as => :alias
   # This declaration means
-  #   query file: database/sources/dir/query_file.red.sql
+  #   query file: red_query/sources/dir/query_file.red.sql
   #   redshift table: new_table_name
   #   key used in command line: alias
 
@@ -94,13 +94,13 @@ Redata::Task.schema.config do
   category :test_category do
     table 'test_table'
     # This declaration means
-    #   query file: database/sources/test_category/test_table.red.sql
+    #   query file: red_query/sources/test_category/test_table.red.sql
     #   redshift table: test_category_test_table
     #   key used in command line: test_category_test_table
 
     table 'test_table_oth', :dir => 'dir', :file => 'query_file_oth', :as => :alias_oth
     # This declaration means
-    #   query file: database/sources/dir/query_file_oth.red.sql
+    #   query file: red_query/sources/dir/query_file_oth.red.sql
     #   redshift table: test_category_test_table
     #   key used in command line: test_category_alias_oth
 
@@ -165,7 +165,7 @@ Usage: `redata [-options] [action] [object key] {stage}`
   - checkout --> export data in table/view of redshift into S3
   - deploy --> deploy data from S3 to local db or file
 + object key --> object declared in `config/relation.rb` will be create/delete/checkout/deploy
-+ stage --> when injecting data into mysql, there may be several stage declared in `config/database.yml{:deploy}` for same database, this could choose which stage to use.
++ stage --> when injecting data into mysql, there may be several stage declared in `config/red_access.yml{:deploy}` for same database, this could choose which stage to use.
 + options
   - -dir --> project directory, both absolute path and realtive path will be okay. default is current directory.
   - -e   --> environment: `production`, `development`, etc.
@@ -178,8 +178,8 @@ Usage: `redata [-options] [action] [object key] {stage}`
 
 Use adjust when you just want to run a query file without declaring in `config/relations.rb`  
 Usage: `adjust [-options] [database] [query file] {platform}`
-+ database   --> `redshift` or database declared in `config/database.yml{:deploy}`
-+ query file --> query file which will be run in `database/adjust/`, **without extends `.red.sql`**
++ database   --> `redshift` or database declared in `config/red_access.yml{:deploy}`
++ query file --> query file which will be run in `red_query/adjust/`, **without extends `.red.sql`**
 + platform   --> same to `redata`
 + options
   - -dir --> project directory, both absolute path and realtive path will be okay. default is current directory.

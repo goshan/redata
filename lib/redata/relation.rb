@@ -18,7 +18,7 @@ module Redata
 		end
 
 		def query_file
-			query_file = RED.root.join 'database', 'sources'
+			query_file = RED.root.join 'red_query', 'sources'
 			query_file = query_file.join @dir if @dir
 			query_file = query_file.join "#{@file}.red.sql"
 			query_file
