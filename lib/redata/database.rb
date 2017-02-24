@@ -28,7 +28,12 @@ module Redata
 			Log.error! "ERROR: Export config of #{config.category} for stage #{stage} was not found" unless target_config
 
 			if target_config['local_dir']
-				cmd = "mv #{config.tmp_data_file} #{target_config['local_dir']}/#{config.source_name}.tsv"
+				if Pathname.new(target_config['local_dir']).absolute?
+					local_dir = Pathname.new(target_config['local_dir'])
+				else
+					local_dir = RED.root.join target_config['local_dir']
+				end
+				cmd = "mv #{config.tmp_data_file} #{local_dir}/#{config.source_name}.tsv"
 			elsif target_config['database']
 				import_params = "--local #{RED.is_append ? '' : '--delete'} --fields-terminated-by='\\t' --fields-enclosed-by='\\\"' --lines-terminated-by='\\n'"
 				cmd = "mysqlimport #{make_mysql_cmd_params(target_config)} #{config.tmp_data_file} #{import_params}"
