@@ -16,7 +16,7 @@ module Redata
 				@ssh.run_command "export PGPASSWORD='#{ENV['PGPASSWORD']}';#{cmd} -f ~/tmp/#{config.tmp_file_dir.basename}/exec.sql"
 				@ssh.remove_dir "~/tmp/#{config.tmp_file_dir.basename}"
 			else
-				system "#{cmd} -f #{config.tmp_exec_file}"
+				@ssh.local_command "#{cmd} -f #{config.tmp_exec_file}"
 			end
 		end
 
@@ -35,7 +35,7 @@ module Redata
 			else
 				Log.error! "ERROR: Export config of #{config.category} was not found" unless target_config
 			end
-			system cmd
+			@ssh.local_command cmd
 		end
 
 		def connect_mysql(query_file, category, stage)
@@ -46,7 +46,7 @@ module Redata
 			Log.error! "ERROR: Export config of #{config.category} for stage #{stage} was not found" unless target_config
 
 			cmd = "mysql #{make_mysql_cmd_params(target_config)} < #{query_file}"
-			system cmd
+			@ssh.local_command cmd
 		end
 
 		private

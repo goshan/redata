@@ -46,6 +46,10 @@ module Redata
 			@keep_tmp
 		end
 
+		def log_file
+			@root.join 'log', "#{@env}_redata.log"
+		end
+
 		def start_time
 			return @locals[:start_time] if @locals[:start_time]
 			if @is_append

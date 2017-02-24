@@ -2,6 +2,7 @@
 require 'pathname'
 require 'yaml'
 require 'erb'
+require 'open3'
 
 # gem lib
 require 'json'

@@ -18,15 +18,25 @@ module Redata
 		end
 
 		def upload_dir(dir)
-			system "scp -r -i #{@ssh['IdentityFile']} #{dir} #{@ssh['User']}@#{@ssh['HostName']}:~/tmp/"
+			`scp -r -i #{@ssh['IdentityFile']} #{dir} #{@ssh['User']}@#{@ssh['HostName']}:~/tmp/`
 		end
 
 		def run_command(cmd)
-			system "ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"#{cmd}\""
+			out, err, status = Open3.capture3 "ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"#{cmd}\""
+			puts err unless err.empty?
+			Log.file out unless out.empty?
+			Log.file err unless err.empty?
+		end
+
+		def local_command(cmd)
+			out, err, status = Open3.capture3 cmd
+			puts err unless err.empty?
+			Log.file out unless out.empty?
+			Log.file err unless err.empty?
 		end
 
 		def remove_dir(dir)
-			system "ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"rm -rf #{dir}\""
+			`ssh -i #{@ssh['IdentityFile']} #{@ssh['User']}@#{@ssh['HostName']} \"rm -rf #{dir}\"`
 		end
 	end
 end
