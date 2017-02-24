@@ -15,9 +15,9 @@ if ['create', 'delete', 'checkout', 'deploy'].include? Redata::RED.params[0]
 		Redata::Task.checkout_datasource Redata::RED.params[1]
 	when 'deploy'
 		Redata::Task.deploy_datasource Redata::RED.params[1], Redata::RED.params[2]
-	else
-		puts "Redata Version #{Redata::VERSION}"
-		puts "Copyright 2013, Han Qiu(goshan), All rights reserved."
 	end
+else
+	puts "Redata Version #{Redata::VERSION}"
+	puts "Copyright 2017, Han Qiu(goshan), All rights reserved."
 end
 
