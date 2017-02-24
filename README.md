@@ -201,5 +201,9 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/goshan
 
 ## License
 
-https://github.com/goshan/redata/blob/master/LICENSE.txt
+This project is licenced under the MIT license, see [LICENSE](https://github.com/goshan/redata/blob/master/LICENSE.txt) for details.
+
+## Copyright
+
+Copyright 2017, Han Qiu(goshan), All rights reserved.
 
