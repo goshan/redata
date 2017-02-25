@@ -11,7 +11,7 @@ module Redata
 				config.tmp_mkdir
 				Parser.gen_create_query config
 				if RED.is_append
-					dLog.action "APPEND<#{config.type}>: data(#{RED.start_time} ~ #{RED.end_time}) into [#{config.source_name}]"
+					Log.action "APPEND<#{config.type}>: data(#{RED.start_time} ~ #{RED.end_time}) into [#{config.source_name}]"
 				else
 					Log.action "CREATE<#{config.type}>: [#{config.source_name}]"
 				end
