@@ -20,6 +20,10 @@ module Redata
 			@params = @argv[:params]
 
 			# config file
+      unless @root.join('config', 'redata.yml').exist?
+        puts "Redata loading error: config/redata.yml not found" 
+        exit 1
+      end
 			@config = YAML.load(ERB.new(File.read(@root.join 'config', 'redata.yml')).result(binding))
 			@s3_config = @config['s3']
 			@s3_config['bucket'] += "-dev" unless @env == 'production'
