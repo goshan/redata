@@ -21,7 +21,7 @@ Or install it yourself as:
 
 And then you should generate some config files by
 
-	$ bundle exec rails generate redata:config
+	$ bundle exec rails generate redata:init
 
 ## Usage
 
