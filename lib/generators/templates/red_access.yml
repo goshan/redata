@@ -1,3 +1,5 @@
+# Access configuration of redshift and local database
+#
 development:
   host: localhost
   username: user
