@@ -9,7 +9,7 @@ Redata::Task.schema.config do
   # Example of declaring a global table with customizing options
   # table 'new_table_name', :dir => 'dir', :file => 'query_file', :as => :alias
   # This declaration means
-  #   query file: red_query/sources/dir/query_file.red.sql
+  #   query file: query/sources/dir/query_file.red.sql
   #   redshift table: new_table_name
   #   key used in command line: alias
 
@@ -21,13 +21,13 @@ Redata::Task.schema.config do
   # category :test_category do
   #   table 'test_table'
   #   This declaration means
-  #     query file: red_query/sources/test_category/test_table.red.sql
+  #     query file: query/sources/test_category/test_table.red.sql
   #     redshift table: test_category_test_table
   #     key used in command line: test_category_test_table
 
   #   table 'test_table_oth', :dir => 'dir', :file => 'query_file_oth', :as => :alias_oth
   #   This declaration means
-  #     query file: red_query/sources/dir/query_file_oth.red.sql
+  #     query file: query/sources/dir/query_file_oth.red.sql
   #     redshift table: test_category_test_table
   #     key used in command line: test_category_alias_oth
 
