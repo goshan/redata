@@ -19,6 +19,10 @@ Or install it yourself as:
 
     $ gem install redata
 
+And then you should generate some config files by
+
+	$ bundle exec rails generate redata:config
+
 ## Usage
 
 ### Config
