@@ -1,0 +1,14 @@
+development:
+  host: localhost
+  username: user
+  password: ''
+  database: dev
+  deploy: # target platform db(mysql) which export data to
+    app:  # category name, using database
+      pro:  # stage name(you can still declare under category absolutely)
+        username: root
+        password: ''
+        host: localhost
+        database: app
+    file:  # another category, using local file
+      local_dir: '~/data'

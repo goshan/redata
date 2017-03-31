@@ -1,0 +1,19 @@
+create_interval:  # default date for create mode
+  start_time: "2016-04-04"
+  end_time: 2  # days ago
+append_interval:  # date fetching interval for append mode
+  start: 3  # days ago
+  end: 2  # days ago
+timezone: "Asia/Tokyo"
+keep_tmp: true    # or false. whether keep temp query file in ./tmp after finished query
+s3:
+  bucket: bucket_name
+  aws_access_key_id: key_id
+  aws_secret_access_key: key_secret
+ssh:  # this setting will be used in ssh mode when you access private database
+  HostName: gateway_host
+  IdentityFile: ~/.ssh/key.pem
+  User: username
+slack_bot:  # this setting will be used for slack notice push
+  token: bot_token
+  channel: slack_channel

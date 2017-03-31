@@ -58,13 +58,13 @@ development:
   database: dev
   deploy: # target platform db(mysql) which export data to
     app:  # category name, using database
-	  pro:  # stage name(you can still declare under category absolutely)
+      pro:  # stage name(you can still declare under category absolutely)
         username: root
         password: ''
         host: localhost
         database: app
     file:  # another category, using local file
-	  local_dir: '~/data'
+      local_dir: '~/data'
 ```
 
 + config `config/relations.rb` for data object in redshift and exporting process to mysql  
@@ -75,14 +75,14 @@ Redata::Task.schema.config do
   # Example of declaring a global table
   table 'table_name'
   # This declaration means
-  #   query file: red_query/sources/table_name.red.sql
+  #   query file: query/sources/table_name.red.sql
   #   redshift table: table_name
   #   key used in command line: table_name
 
   # Example of declaring a global table with customizing options
   table 'new_table_name', :dir => 'dir', :file => 'query_file', :as => :alias
   # This declaration means
-  #   query file: red_query/sources/dir/query_file.red.sql
+  #   query file: query/sources/dir/query_file.red.sql
   #   redshift table: new_table_name
   #   key used in command line: alias
 
@@ -94,13 +94,13 @@ Redata::Task.schema.config do
   category :test_category do
     table 'test_table'
     # This declaration means
-    #   query file: red_query/sources/test_category/test_table.red.sql
+    #   query file: query/sources/test_category/test_table.red.sql
     #   redshift table: test_category_test_table
     #   key used in command line: test_category_test_table
 
     table 'test_table_oth', :dir => 'dir', :file => 'query_file_oth', :as => :alias_oth
     # This declaration means
-    #   query file: red_query/sources/dir/query_file_oth.red.sql
+    #   query file: query/sources/dir/query_file_oth.red.sql
     #   redshift table: test_category_test_table
     #   key used in command line: test_category_alias_oth
 
@@ -179,7 +179,7 @@ Usage: `redata [-options] [action] [object key] {stage}`
 Use adjust when you just want to run a query file without declaring in `config/relations.rb`  
 Usage: `adjust [-options] [database] [query file] {platform}`
 + database   --> `redshift` or database declared in `config/red_access.yml{:deploy}`
-+ query file --> query file which will be run in `red_query/adjust/`, **without extends `.red.sql`**
++ query file --> query file which will be run in `query/adjust/`, **without extends `.red.sql`**
 + platform   --> same to `redata`
 + options
   - -dir --> project directory, both absolute path and realtive path will be okay. default is current directory.
