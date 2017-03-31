@@ -3,7 +3,10 @@ module Redata
 		REDSHIFT_PORT = 5439
 
 		def initialize
-			Log.error! "ERROR: Database of #{RED.env} was not declared in config/red_access.yml" unless RED.root.join('config', 'red_access.yml').exist?
+      unless RED.root.join('config', 'red_access.yml').exist?
+        puts "Redata loading error: config/red_access.yml not found" 
+        return nil
+      end
 			@config = YAML.load(ERB.new(File.read(RED.root.join 'config', 'red_access.yml')).result(binding))[RED.env]
 			Log.error! "ERROR: Database of #{RED.env} was not declared in config/red_access.yml" unless @config
 

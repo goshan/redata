@@ -22,7 +22,7 @@ module Redata
 			# config file
       unless @root.join('config', 'redata.yml').exist?
         puts "Redata loading error: config/redata.yml not found" 
-        exit 1
+        return nil
       end
 			@config = YAML.load(ERB.new(File.read(@root.join 'config', 'redata.yml')).result(binding))
 			@s3_config = @config['s3']
