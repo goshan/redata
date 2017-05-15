@@ -143,7 +143,7 @@ module Redata
 							RED.locals[key] = val
 						end
 						sub_file = in_file.parent.join "_#{sub}.red.sql"
-						sub_file = RED.root.join 'query', 'shared', "_#{sub}.rea.sql" unless sub_file.exist?
+						sub_file = RED.root.join 'query', 'shared', "_#{sub}.red.sql" unless sub_file.exist?
 						sub_temp_tables = self.parse sub_file, out_file.dirname.join("#{name}.resql")
 						sub_temp_tables.each do |n|
 							temp_tables.push n unless temp_tables.include? n
