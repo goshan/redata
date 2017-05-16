@@ -9,7 +9,7 @@ unless Redata::RED.params[0]
 end
 
 temp_config = OpenStruct.new
-temp_config.query_file = Redata::RED.root.join 'query', 'adjust', "#{Redata::RED.params[1]}.sql"
+temp_config.query_file = Redata::RED.root.join 'query', 'adjust', "#{Redata::RED.params[1]}.red.sql"
 temp_config.tmp_file_dir = Redata::RED.root.join "tmp", "adj_#{Redata::RED.params[0]}_#{Redata::RED.params[1]}"
 temp_config.tmp_exec_file = Redata::RED.root.join "tmp", "adj_#{Redata::RED.params[0]}_#{Redata::RED.params[1]}", "exec.sql"
 
