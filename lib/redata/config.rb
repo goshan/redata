@@ -87,6 +87,10 @@ module Redata
 		def current_time
 			@tz_local.utc_to_local(Time.now.utc).strftime('%Y-%m-%d %H:%M:%S')
 		end
+		
+		def today
+			@tz_local.utc_to_local(Time.now.utc).strftime('%Y-%m-%d')
+		end
 
 		def date_days_ago(days)
 			@tz_local.utc_to_local(Time.now.utc-days*24*3600).strftime('%Y-%m-%d')
