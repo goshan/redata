@@ -1,6 +1,6 @@
 module Redata
 	class Config
-		attr_accessor :root, :env, :is_forced, :is_ssh, :is_append, :params, :locals
+		attr_accessor :root, :env, :identify, :is_forced, :is_ssh, :is_append, :params, :locals
 
 		def initialize(argv=nil)
 			# params
@@ -13,6 +13,7 @@ module Redata
 				@root = Pathname.new(Dir.pwd).join @argv[:dir]
 			end
 			@env = @argv[:env] || 'development'
+      @identify = @argv[:identify]
 			@is_forced = @argv[:force]
 			@is_ssh = @argv[:ssh]
 			@is_append = @argv[:append_mode]
@@ -112,6 +113,8 @@ module Redata
 					new_argv[:ssh] = true
 				when '-append'
 					new_argv[:append_mode] = true
+				when '-identify'
+					new_argv[:identify] = argv[i]
 				else
 					if argv[i] =~ /\A-(.+)/
 						key = argv[i].match(/\A-(.+)/)[1]

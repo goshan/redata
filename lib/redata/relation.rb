@@ -14,7 +14,8 @@ module Redata
 		end
 
 		def source_name
-			@category == :main ? @name : "#{@category}_#{@name}"
+      postfix = RED.identify ? "_#{RED.identify}" : ""
+			@category == :main ? "#{@name}#{postfix}" : "#{@category}_#{@name}#{postfix}"
 		end
 
 		def query_file
