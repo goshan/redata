@@ -174,6 +174,7 @@ Usage: `redata [-options] [action] [object key] {stage}`
   - -dir --> project directory, both absolute path and realtive path will be okay. default is current directory.
   - -e   --> environment: `production`, `development`, etc.
   - -f   --> force mode, use `CADCASE` when removing view or table in redshift
+  - -identify      --> table/view name will be appended with this identify
   - -ssh --> use ssh accessing to private database with ssh config in `config/redata.yml`
   - -append  --> use `append_mode`, append new data into existing table for redshift or inject into local db without deleting. view has no append mode.
   - other options  --> some params will be used in query file when declared, such `start_time`
