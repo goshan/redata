@@ -114,6 +114,7 @@ module Redata
 				when '-append'
 					new_argv[:append_mode] = true
 				when '-identify'
+					i += 1
 					new_argv[:identify] = argv[i]
 				else
 					if argv[i] =~ /\A-(.+)/
