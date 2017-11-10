@@ -39,7 +39,7 @@ module Redata
 				DATABASE.connect_redshift config
 
 				bucket = S3Bucket.new
-				bucket.move "#{config.bucket_file}000", config.bucket_file
+				#bucket.move "#{config.bucket_file}000", config.bucket_file
 				config.tmp_rmdir
 			end
 		end
