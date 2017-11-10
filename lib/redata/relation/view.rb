@@ -6,7 +6,7 @@ module Redata
 		end
 
 		def bucket_file
-			"#{RED.today}/#{@category}/#{@name}.tsv"
+			"#{RED.today}/#{@category}/#{@name}.tsv000"
 		end
 
 		def tmp_data_file
