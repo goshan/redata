@@ -48,12 +48,12 @@ module Redata
 			self.parse_key(key, [:view]).each do |config|
 				config.tmp_mkdir
 				bucket = S3Bucket.new
-				bucket.make_public config.bucket_file, true
+				bucket.make_public "#{config.bucket_file}000", true
 
 				Log.action "DOWNLOAD<bucket>: from [#{config.bucket_file}]"
-				system "wget #{RED.s3['host']}/#{config.bucket_file} -O #{config.tmp_data_file} --quiet"
+				system "wget #{RED.s3['host']}/#{config.bucket_file}000 -O #{config.tmp_data_file} --quiet"
 
-				bucket.make_public config.bucket_file, false
+				bucket.make_public "#{config.bucket_file}000", false
 
 				Log.action "INJECT<#{config.category}>: with [#{config.name}] #{stage ? 'for stage '+stage : ''}"
 				DATABASE.inject_data config, stage
