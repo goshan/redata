@@ -3,9 +3,9 @@
 require File.expand_path '../../lib/redata', __FILE__
 
 unless Redata::RED.params[0]
-	puts "Redata Version #{Redata::VERSION}"
-	puts "Copyright 2017, Han Qiu(goshan), All rights reserved."
-	exit 0
+  puts "Redata Version #{Redata::VERSION}"
+  puts "Copyright 2017, Han Qiu(goshan), All rights reserved."
+  exit 0
 end
 
 temp_config = OpenStruct.new
@@ -19,9 +19,9 @@ Redata::Log.action "ADJUST<#{Redata::RED.params[0]}>: use [#{temp_config.query_f
 Redata::Parser.gen_adjust_query temp_config
 
 if Redata::RED.params[0] == "redshift"
-	Redata::DATABASE.connect_redshift temp_config
+  Redata::DATABASE.connect_redshift temp_config
 else
-	Redata::DATABASE.connect_mysql temp_config.tmp_exec_file, Redata::RED.params[0], Redata::RED.params[2]
+  Redata::DATABASE.connect_mysql temp_config.tmp_exec_file, Redata::RED.params[0], Redata::RED.params[2]
 end
 
 FileUtils.rm_r temp_config.tmp_file_dir if temp_config.tmp_file_dir.exist?

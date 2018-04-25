@@ -7,15 +7,15 @@ require File.expand_path '../../lib/redata/notice', __FILE__
 
 
 if ['log', 'mention'].include? Redata::RED.params[0]
-	notice = Redata::Notice.new
-	case Redata::RED.params[0]
-	when 'log'
-		notice.log Redata::RED.params[1], Redata::RED.params[2]
-	when 'mention'
-		notice.mention Redata::RED.params[1], Redata::RED.params[2]
-	end
+  notice = Redata::Notice.new
+  case Redata::RED.params[0]
+  when 'log'
+    notice.log Redata::RED.params[1], Redata::RED.params[2]
+  when 'mention'
+    notice.mention Redata::RED.params[1], Redata::RED.params[2]
+  end
 else
-	puts "Redata Version #{Redata::VERSION}"
-	puts "Copyright 2017, Han Qiu(goshan), All rights reserved."
+  puts "Redata Version #{Redata::VERSION}"
+  puts "Copyright 2017, Han Qiu(goshan), All rights reserved."
 end
 

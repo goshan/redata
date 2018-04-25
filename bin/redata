@@ -6,18 +6,18 @@ require Redata::RED.root.join('config', 'relations.rb').to_s
 
 
 if ['create', 'delete', 'checkout', 'deploy'].include? Redata::RED.params[0]
-	case Redata::RED.params[0]
-	when 'create'
-		Redata::Task.create_datasource Redata::RED.params[1]
-	when 'delete'
-		Redata::Task.delete_datasource Redata::RED.params[1]
-	when 'checkout'
-		Redata::Task.checkout_datasource Redata::RED.params[1]
-	when 'deploy'
-		Redata::Task.deploy_datasource Redata::RED.params[1], Redata::RED.params[2]
-	end
+  case Redata::RED.params[0]
+  when 'create'
+    Redata::Task.create_datasource Redata::RED.params[1]
+  when 'delete'
+    Redata::Task.delete_datasource Redata::RED.params[1]
+  when 'checkout'
+    Redata::Task.checkout_datasource Redata::RED.params[1]
+  when 'deploy'
+    Redata::Task.deploy_datasource Redata::RED.params[1], Redata::RED.params[2]
+  end
 else
-	puts "Redata Version #{Redata::VERSION}"
-	puts "Copyright 2017, Han Qiu(goshan), All rights reserved."
+  puts "Redata Version #{Redata::VERSION}"
+  puts "Copyright 2017, Han Qiu(goshan), All rights reserved."
 end
 
